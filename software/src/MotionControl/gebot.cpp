@@ -521,10 +521,52 @@ void CGebot::InverseKinematics(Matrix<float, 4, 3> cmdpos)
 //motor control;
  
 
+//iic contact mega s
+void CGebot::contactMega()
+{
+    svStatus=0b00000000;
+    api.conactMega(svStatus);
+}
 
+void CGebot::MegaPumpAllNegtive()
+{
+    svStatus=0b01010101;// 01-N 10-P;
+    api.setMegaSV(svStatus);
+}
 
-//robot's air control 
-//RF-RH-LH-LF
+void CGebot::MegaPumpAllPositve()
+{
+    svStatus=0b10101010;
+    api.setMegaSV(svStatus);
+}
+
+void CGebot::MegaPumpPositive(int legNum)
+{
+    if(legNum==0) legNum=3;
+    else if(legNum==1) legNum=0;
+    else if(legNum==2) legNum=2;
+    else if(legNum==3) legNum=1;
+    svStatus|=1<<((3-legNum)*2+1);
+    //cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
+    svStatus&=~(1<<((3-legNum)*2));
+    //cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
+    api.setMegaSV(svStatus);
+}
+
+void CGebot::MegaPumpNegtive(int legNum)
+{   
+    if(legNum==0) legNum=3;
+    else if(legNum==1) legNum=0;
+    else if(legNum==2) legNum=2;
+    else if(legNum==3) legNum=1;
+    svStatus|=1<<((3-legNum)*2);
+   //  cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
+    svStatus&=~(1<<((3-legNum)*2+1));
+    //cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
+    api.setMegaSV(svStatus);
+}
+
+//robot's air control //RF-RH-LH-LF
 void CGebot::PumpAllNegtive()
 {
     svStatus=0b01010101;// 01-N 10-P;
@@ -571,18 +613,21 @@ void CGebot::AirControl()
         if(m_glLeg[legNum]->GetLegStatus()==swingDown)  //attach
         {
             PumpNegtive(legNum);
+            // MegaPumpNegtive(legNum);
         }
         else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
             if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * PrePsotiveFactor) )   
             {
                 PumpPositive(legNum);
+                // MegaPumpPositive(legNum);
                 BSwingPhaseStartFlag = true;
             // cout<<legNum<<"th has been changed to be positive in stance!"<<endl;
             }    
         }
         else if(m_glLeg[legNum]->GetLegStatus()==detach){
              PumpPositive(legNum);
+            //  MegaPumpPositive(legNum);
             //  cout<<legNum<<"th has been changed to be positive in detach!"<<endl;
         }
            

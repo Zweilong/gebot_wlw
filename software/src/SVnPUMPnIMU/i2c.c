@@ -86,6 +86,49 @@ errexit3:
 }
 
 int
+i2c_write_data_oneByte(u8 addr, u8 reg, u8 *val, u32 len)
+{
+	int ret = 0;
+    struct i2c_rdwr_ioctl_data *data;
+
+    // 分配结构体内存
+    if ((data = (struct i2c_rdwr_ioctl_data *)malloc(sizeof(struct i2c_rdwr_ioctl_data))) == NULL)
+        return -1;
+
+    data->nmsgs = 1;
+    if ((data->msgs = (struct i2c_msg *)malloc(data->nmsgs * sizeof(struct i2c_msg))) == NULL) 
+    {
+        ret = -1;
+        goto errexit2;
+    }
+    
+    // 分配存放数据的缓冲区，只存放需要发送的数据
+    if ((data->msgs[0].buf = (unsigned char *)malloc(len * sizeof(unsigned char))) == NULL) {
+        ret = -1;
+        goto errexit1;
+    }
+
+    // 设置 I2C 消息
+    data->msgs[0].addr = addr;   // 设备地址
+    data->msgs[0].flags = 0;      // 写操作
+    data->msgs[0].len = len;      // 只发送 len 个字节
+    memcpy(data->msgs[0].buf, val, len); // 复制数据到缓冲区
+
+    // 发送 I2C 消息
+    if ((ret = __i2c_send(fd, data)) < 0)
+        goto errexit0;
+
+errexit0:
+    free(data->msgs[0].buf);
+errexit1:
+    free(data->msgs);
+errexit2:
+    free(data);
+
+    return ret;
+}
+
+int
 i2c_write_data(u8 addr, u8 reg, u8 *val, u32 len)
 {
 	int ret = 0, i;

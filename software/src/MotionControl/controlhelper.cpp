@@ -215,19 +215,29 @@ void SetPos(Matrix<float,4,3> jointCmdPos,DxlAPI& motors,vector<float>& vLastSet
     float offSet[]= OFFSET;
     float offSet1[]= OFFSET1;
     float offSet2[]= OFFSET2;
+    float offSet3[]= OFFSET3;
+    float offSet4[]= OFFSET4;
     float* offSetOutput;
     if(LastJointPos==0)
     {
         offSetOutput = offSet;
     }
-    if(LastJointPos==1)
+    else if(LastJointPos==1)
     {
         offSetOutput = offSet1;
     }
-    if(LastJointPos==2)
+    else if(LastJointPos==2)
     {
         offSetOutput = offSet2;
-    }        
+    }
+    else if(LastJointPos==3)
+    {
+        offSetOutput = offSet3;
+    }
+    else if (LastJointPos==4)
+    {
+        offSetOutput = offSet4;
+    }       
     for (int i = 12; i < 16; ++i) {
         vLastSetPos[i] = setPos[i]+offSetOutput[i-12];
     }

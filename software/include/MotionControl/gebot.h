@@ -99,6 +99,11 @@ public:
     void PumpAllNegtive();
     void PumpAllPositve();
     void PumpAllClose();
+    void contactMega();
+    void MegaPumpAllNegtive();
+    void MegaPumpAllPositve();
+    void MegaPumpPositive(int legNum);
+    void MegaPumpNegtive(int legNum);
     //motor control
      
     //DxlAPI dxlMotors;  //3000000  cannot hold 6 legs ttyUSB0 ttyAMA0

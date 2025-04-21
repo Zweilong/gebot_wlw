@@ -15,6 +15,7 @@ bool runFlag = 0;
 bool curveFlag = 0;
 int choosePosNum = 0;
 int LastJointPos = 0;
+std::mutex mtx_curveFlag;
 std::mutex mtx_choosePosNum;
 std::mutex mtx_LastJointPos;
 std::atomic<float> program_run_time(0.0);
@@ -62,10 +63,14 @@ void *udpConnect(void *data)
                 }
         ret=commandJudge((char*)string("xed").c_str(),(char *)buf.c_str());
         if(ret){
-                    // std::lock_guard<std::mutex> lock(mtx_choosePosNum);  
-                    std::lock_guard<std::mutex> lock2(mtx_LastJointPos); 
-                    curveFlag = 1;                     
-                    ++LastJointPos;                
+                    std::lock_guard<std::mutex> lock(mtx_choosePosNum);  
+                    std::lock_guard<std::mutex> lock2(mtx_LastJointPos);  
+                    std::lock_guard<std::mutex> lock3(mtx_curveFlag);  // 同时锁住curveFlag
+
+                    curveFlag = 1;
+                    LastJointPos = std::min(LastJointPos + 1, 4);  
+                    // choosePosNum = std::min(LastJointPos + 1, 2);  
+                    choosePosNum = 1;
                     goto END;
                }
         ret=commandJudge((char*)string("pumpPositive").c_str(),(char *)buf.c_str());
@@ -296,31 +301,6 @@ void *robotStateUpdateSend(void *data)
     rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
 
 #if(INIMODE==2)
-// float  float_initPos[12];
-// if(choosePosNum == 0)
-// {
-//     // raw flat surface
-//     float_initPos[0] = 84.0;  float_initPos[1] = 65.5; float_initPos[2] = -21.0;
-//     float_initPos[3] = 84.0;  float_initPos[4] = -65.5; float_initPos[5] = -21.0;
-//     float_initPos[6] = -84.0; float_initPos[7] = 65.5; float_initPos[8] = -21.0;
-//     float_initPos[9] = -84.0; float_initPos[10] = -65.5; float_initPos[11] = -21.0;
-// }
-// else if(choosePosNum == 1)
-// {
-//     // concave surface 
-//     float_initPos[0] = 94.0;  float_initPos[1] = 65.5; float_initPos[2] = -35.0;
-//     float_initPos[3] = 94.0;  float_initPos[4] = -65.5; float_initPos[5] = -35.0;
-//     float_initPos[6] = -74.0; float_initPos[7] = 65.5; float_initPos[8] = -35.0;
-//     float_initPos[9] = -74.0; float_initPos[10] = -65.5; float_initPos[11] = -35.0;  
-// }
-// else if(choosePosNum ==2)
-// {
-//     // convex surface
-//     float_initPos[0] = 94.0;  float_initPos[1] = 65.5; float_initPos[2] = -35.0;
-//     float_initPos[3] = 94.0;  float_initPos[4] = -65.5; float_initPos[5] = -35.0;
-//     float_initPos[6] = -74.0; float_initPos[7] = 65.5; float_initPos[8] = -35.0;
-//     float_initPos[9] = -74.0; float_initPos[10] = -65.5; float_initPos[11] = -35.0;              
-// }
   float float_initPos[12]={   84.0,65.5,-21.0,
                     84.0,-65.5,-21.0,
                     -84.0, 65.5,-21.0,
@@ -338,23 +318,6 @@ void *robotStateUpdateSend(void *data)
 //                                     -74,62,-14,
 //                                     -74,-60,-10
 //                                     };
-// // 60, 60, -30,
-// 60,-60, -30,
-// -60, 60, -30,
-// -60,-60, -30,
-// 65.5,70.0,21.0,
-// 65.5,70.0,21.0,
-// 65.5,84.0,21.0,
-// 65.5,84.0,21.0
-//  80,  50, -22,
-//  80, -50, -22,
-// -40,  50, -22,
-// -40, -50, -23,
-
-//  80,  55, -16,
-//  80, -55, -16,
-// -40,  55, -16,
-// -40, -69, -18,
 //std::vector<float> float_initPos(12);
 //   float float_initPos[12];
 //   string2float2("../include/initPos.csv", float_initPos);//Foot end position
@@ -383,6 +346,7 @@ void *robotStateUpdateSend(void *data)
     usleep(1e5);
     for (size_t i = 0; i < 4; i++)
         rbt.PumpNegtive(i);
+        // rbt.MegaPumpNegtive(i);
     
     usleep(1e6);
     rbt.bInitFlag = 1;
@@ -395,12 +359,30 @@ void *robotStateUpdateSend(void *data)
     usleep(1e3);        
     while(1)
     {
-        if(curveFlag){
-            curveFlag = 0;
-            float  float_initPos[12]={   94.0,65.5,-35.0,
-                    94.0,-65.5,-35.0,
-                    -74.0, 65.5,-35.0,
-                    -74.0, -65.5,-35.0}; //concave surface 
+        // rbt.contactMega(); //test
+        // rbt.contactMega();
+        if(curveFlag)
+        {
+            std::lock_guard<std::mutex> lock(mtx_curveFlag);  // 加锁
+            if (curveFlag) 
+            {
+                curveFlag = 0;
+            }
+            
+            // if(choosePosNum=1)
+            // {
+            //     float  float_initPos[12]={   94.0,65.5,-35.0,
+            //             94.0,-65.5,-35.0,
+            //             -84.0, 65.5,-21.0,
+            //             -84.0, -65.5,-21.0}; //flat to concave surface 
+            // }
+            // else if(choosePosNum=2)
+            // {
+                float  float_initPos[12]={   94.0,65.5,-35.0,
+                        94.0,-65.5,-35.0,
+                        -74.0, 65.5,-35.0,
+                        -74.0, -65.5,-35.0}; //concave surface                 
+            // }
             for(int i=0; i<4; i++)
                 for(int j=0;j<3;j++)
                 {
@@ -409,7 +391,6 @@ void *robotStateUpdateSend(void *data)
                 }
             // rbt.mfLegCmdPos = InitPos;     
             rbt.SetInitPos(InitPos);
-
         }
         if(runFlag){
             struct timeval startTime={0,0},endTime={0,0};
@@ -440,10 +421,8 @@ void *robotStateUpdateSend(void *data)
 
            //rbt.AttitudeCorrection180();
             /*******************vibration*************/
-            
-
           
-        //     cout<<"z:"<<z<<endl;
+            //     cout<<"z:"<<z<<endl;
             /************************************/
         
             rbt.ParaDeliver();
@@ -493,7 +472,6 @@ void *runImpCtller(void *data)
             rbt.ForwardKinematics(1);
             rbt.UpdateJacobians();
           
-
             rbt.UpdateFtsPresVel();
             rbt.UpdateFtsPresForce(motors.present_torque);  
            // ringBuffer_force.push(rbt.mfForce);

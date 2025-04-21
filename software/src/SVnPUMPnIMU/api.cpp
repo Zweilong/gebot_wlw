@@ -45,6 +45,17 @@ void API::setSV(u8 value)
     i2c_write_data(I2C_ADD_PCF, sendValue[0], sendValue, 1);
 }
 
+void API::conactMega(u8 value)
+{
+    i2c_write_data_oneByte(I2C_MEGA_ADDR, 0, &value, 1);  // 直接发送 1 字节数据   
+}  //test
+
+void API::setMegaSV(u8 value)
+{
+    sendValue[0] = value;
+    i2c_write_data(I2C_MEGA_ADDR, sendValue[0], sendValue, 1);
+}
+
 void API::setPump(u8 num, u8 status)
 {
     digitalWrite(num, status);

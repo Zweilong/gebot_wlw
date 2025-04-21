@@ -20,10 +20,11 @@
 #define CompDisA2 22.0/1000.0 
 #define CompDisA3 22.0/1000.0   
 #define CompDisALL 10/1000.0     // Compensation of Distance  AttitudeCorrection() All stace phase
-#define OFFSET {-0.1,0.0,0.05,-0.2}
-#define OFFSET1 {0.2,-0.2,-0.2,0.2}
-#define OFFSET2 {-0.2,0.2,0.2,-0.2}
-
+#define OFFSET {-0.1,0.0,0.10,-0.2}  
+#define OFFSET1 {0.2,-0.2,0.05,-0.2}
+#define OFFSET2 {0.2,-0.2,-0.2,0.2}
+#define OFFSET3 {-0.2,0.2,-0.2,0.2}
+#define OFFSET4 {-0.2,0.2,0.2,-0.2} //offset of the lat jointpos
 #define THREAD1_ENABLE 1
 #define THREAD2_ENABLE 1
 //  1:  Motor angle

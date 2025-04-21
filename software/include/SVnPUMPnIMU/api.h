@@ -23,6 +23,7 @@
 #include "REG.h"
 
 #define I2C_ADD_PCF 0x20
+#define I2C_MEGA_ADDR 0x10
 #define ACC_UPDATE		0x01
 #define GYRO_UPDATE		0x02
 #define ANGLE_UPDATE	0x04
@@ -57,6 +58,8 @@ public:
     float fAcc[3], fGyro[3], fAngle[3];
     float busVoltage, current, power;
     void setSV(u8 value); //3 position control; 0 current control
+    void conactMega(u8 value);
+    void setMegaSV(u8 value);
     void setPump(u8 num, u8 status);
     void updateIMU();
     void updatePowerStatus();
