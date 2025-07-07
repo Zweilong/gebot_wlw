@@ -38,7 +38,7 @@
 #define loopRateSVRead   100.0//hz
 #define VELX 3.0/1000    // mm  step length = VELX * timeForStancePhase        
 #define TimePeriod 0.05
-#define TimeForGaitPeriod 8.0
+#define TimeForGaitPeriod 16
 #define PI 3.1415926
 #define THREHOLDLF 1000//800
 #define THREHOLDRF 1000//800

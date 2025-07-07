@@ -4,6 +4,8 @@ extern int LastJointPos;
 bool swingtimeFlag = false;
 CGebot::CGebot(float length,float width,float height,float mass)
 {
+    // theta4.setZero();
+    theta4.setConstant(45.0f * M_PI / 180.0f);
     //dxlMotors.init("/dev/ttyAMA0", 1000000, ID, 2);  // CAN NOT 4M.   ttyUSB0 ttyAMA0      
     m_glLeg[0] = new CLeg(LF,65.5,84.0,21.0);  // mm
     m_glLeg[1] = new CLeg(RF,65.5,84.0,21.0);
@@ -310,7 +312,6 @@ void CGebot::SetCoMVel(Matrix<float, 6,1> tCV)
     vfTargetCoMVelocity = tCV;
 }
 
-
 /**
  * @brief 
  * 
@@ -398,7 +399,6 @@ void CGebot::NextStep()
 
     for(uint8_t legNum=0; legNum<4; legNum++)  // run all 4 legs
     {   
-       
         enum_LEGSTATUS ls=m_glLeg[legNum]->GetLegStatus(); //get present status
         if(legNum<2)
             fStepHeight = StepHeight_F;
@@ -433,8 +433,7 @@ void CGebot::NextStep()
             float x, xh, m, n, k;
             if(mfSwingVelocity(0, 0) == 0)      //first step
             {
-                mfLegCmdPos(legNum, 2) += fStepHeight / (iStatusCounterBuffer[legNum][(int)detach] + iStatusCounterBuffer[legNum][(int)swingUp]);
-                
+                mfLegCmdPos(legNum, 2) += fStepHeight / (iStatusCounterBuffer[legNum][(int)detach] + iStatusCounterBuffer[legNum][(int)swingUp]);                
             }
             else 
             {            
@@ -491,6 +490,7 @@ void CGebot::NextStep()
     {                                                            // if so, set it to 0.0
        runTimes++;
     }
+    cout<<"222222"<<endl;
 }
 
 /**
@@ -512,58 +512,75 @@ void CGebot::ForwardKinematics(int mode)
     }
 }
 
-void CGebot::InverseKinematics(Matrix<float, 4, 3> cmdpos)
+void CGebot::InverseKinematics(Matrix<float, 4, 3> cmdpos, Matrix<float, 4, 1> theta4)
 {
     for(int legNum=0;legNum<4;legNum++)
-        mfJointCmdPos.row(legNum)=m_glLeg[legNum]->InverseKinematic(cmdpos.block(legNum,0,1,3)).transpose();
+        mfJointCmdPos.row(legNum)=m_glLeg[legNum]->InverseKinematic(cmdpos.block(legNum,0,1,3),theta4(legNum)).transpose();
 }
 
-//motor control;
- 
+//set mega pump
+void CGebot::setMegaPump()
+{
+    std::string sendStr = "#20&-20&20&-20&20&-20&20&-20$"; 
+    api.sendMegaAirData(sendStr);
+}
+
+void CGebot::setMegaPump2()
+{
+    std::string sendStr = "#0&0&0&0&0&0&0&0$"; 
+    api.sendMegaAirData(sendStr);
+}
+// based on Convex surface
+void CGebot::setMegaPumpInit()
+{
+    std::string sendStr = "#20&10&20&10&20&10&20&10$"; 
+    api.sendMegaAirData(sendStr);
+}
+
+void CGebot::MegaPumpNegative(int legNum)
+{
+    std::string sendStr;
+    if(legNum==0) sendStr = "#-40&-40&20&10&20&10&20&10$";  //LF
+    else if(legNum==1) sendStr = "#20&10&-40&-40&20&10&20&10$";  //RF
+    else if(legNum==2) sendStr = "#20&10&20&10&-40&-40&20&10$";  //LH
+    else if(legNum==3) sendStr = "#20&10&20&10&20&10&-40&-40$";  //RH
+    api.sendMegaAirData(sendStr);
+}
+
+void CGebot::MegaPumpPositive(int legNum)
+{
+    std::string sendStr = "#20&10&20&10&20&10&20&10$";
+    api.sendMegaAirData(sendStr);   
+}
+
+void CGebot::MegaPumpControl()
+{
+    for(int legNum=0;legNum<4;legNum++)   
+    {
+        if(m_glLeg[legNum]->GetLegStatus()==swingDown)  //attach
+        {
+            MegaPumpPositive(legNum);
+        }
+        else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
+        {
+            if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * PrePsotiveFactor) )   
+            {
+                MegaPumpNegative(legNum);
+                BSwingPhaseStartFlag = true;
+            }    
+        }
+        else if(m_glLeg[legNum]->GetLegStatus()==detach){
+             MegaPumpNegative(legNum);
+        }        
+    }
+
+}
 
 //iic contact mega s
 void CGebot::contactMega()
 {
     svStatus=0b00000000;
     api.conactMega(svStatus);
-}
-
-void CGebot::MegaPumpAllNegtive()
-{
-    svStatus=0b01010101;// 01-N 10-P;
-    api.setMegaSV(svStatus);
-}
-
-void CGebot::MegaPumpAllPositve()
-{
-    svStatus=0b10101010;
-    api.setMegaSV(svStatus);
-}
-
-void CGebot::MegaPumpPositive(int legNum)
-{
-    if(legNum==0) legNum=3;
-    else if(legNum==1) legNum=0;
-    else if(legNum==2) legNum=2;
-    else if(legNum==3) legNum=1;
-    svStatus|=1<<((3-legNum)*2+1);
-    //cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
-    svStatus&=~(1<<((3-legNum)*2));
-    //cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
-    api.setMegaSV(svStatus);
-}
-
-void CGebot::MegaPumpNegtive(int legNum)
-{   
-    if(legNum==0) legNum=3;
-    else if(legNum==1) legNum=0;
-    else if(legNum==2) legNum=2;
-    else if(legNum==3) legNum=1;
-    svStatus|=1<<((3-legNum)*2);
-   //  cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
-    svStatus&=~(1<<((3-legNum)*2+1));
-    //cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
-    api.setMegaSV(svStatus);
 }
 
 //robot's air control //RF-RH-LH-LF
@@ -613,21 +630,18 @@ void CGebot::AirControl()
         if(m_glLeg[legNum]->GetLegStatus()==swingDown)  //attach
         {
             PumpNegtive(legNum);
-            // MegaPumpNegtive(legNum);
         }
         else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
             if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * PrePsotiveFactor) )   
             {
                 PumpPositive(legNum);
-                // MegaPumpPositive(legNum);
                 BSwingPhaseStartFlag = true;
             // cout<<legNum<<"th has been changed to be positive in stance!"<<endl;
             }    
         }
         else if(m_glLeg[legNum]->GetLegStatus()==detach){
              PumpPositive(legNum);
-            //  MegaPumpPositive(legNum);
             //  cout<<legNum<<"th has been changed to be positive in detach!"<<endl;
         }
            

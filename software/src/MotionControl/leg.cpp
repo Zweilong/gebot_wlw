@@ -235,61 +235,37 @@ bool  CLeg::getTouchStatus()
  * @param cmdpos 
  * Calculcate joint angles (jointCmdPos) for motors with foot position(cmdpos) in shoulder coordinate
  */
-Matrix<float,3,1> CLeg::InverseKinematic(Matrix<float, 1, 3> cmdpos)
+Matrix<float,3,1> CLeg::InverseKinematic(Matrix<float, 1, 3> cmdpos, float theta4)
 {
     Matrix<float,3,1> jointCmdPos;
     float L1=m_fL1,L2=m_fL2,L3=m_fL3;
     float factor_x, factor_y, factor_z, factor_1, factor_2, factor_0;
     float x, y, z;
  
-        x = cmdpos(0, 0);
-        y = cmdpos(0, 1);
-        z = cmdpos(0, 2);
-        if(m_sName==LF)
-        {
-         float temp[3];
-         temp[0]=x;
-         temp[1]=y;
-         temp[2]=z;
-         x=temp[1];
-         y=temp[2];
-         z=temp[0];
-         jointCmdPos(0, 0)=atan2(L3+y,x);
-         float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
-         jointCmdPos(2, 0)=atan2(L3*s1,L2)-atan2((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
-         float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
-         jointCmdPos(1, 0)=atan2(L2*c3+L3*s1*s3,L1+L2*s3-L3*s1*c3)-atan2(z,sqrt((L2*c3+L3*s1*s3)*(L2*c3+L3*s1*s3)+(L1+L2*s3-L3*s1*c3)*(L1+L2*s3-L3*s1*c3)-z*z));   
-        }
-        else if(m_sName==RF)
-        {
-         float temp[3];
-         temp[0]=x;
-         temp[1]=y;
-         temp[2]=z;
-         x=-temp[1];
-         y=-temp[2];
-         z=temp[0];
-         jointCmdPos(0, 0)=atan2(-L3+y,x);
-         float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
-         jointCmdPos(2, 0)=atan2(L3*s1,L2)-atan2((x*x+y*y+z*z-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((L3*s1)*(L3*s1)+L2*L2-(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
-         float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
-         jointCmdPos(1, 0)=atan2(-L2*c3-L3*s1*s3,L1-L2*s3+L3*s1*c3)-atan2(-z,sqrt((-L2*c3-L3*s1*s3)*(-L2*c3-L3*s1*s3)+(L1-L2*s3+L3*s1*c3)*(L1-L2*s3+L3*s1*c3)-z*z));   
-        }
-        else if(m_sName==LH){
-         float temp[3];
-         temp[0]=x;
-         temp[1]=y;
-         temp[2]=z;
-         x=temp[1];
-         y=temp[2];
-         z=temp[0];
-         jointCmdPos(0, 0)=atan2(L3+y,x);
-         float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
-         jointCmdPos(2, 0)=atan2(-L3*s1,L2)-atan2(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
-         float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
-         jointCmdPos(1, 0)=atan2(-L2*c3+L3*s1*s3,L1-L2*s3-L3*s1*s3)-atan2(z,sqrt((-L2*c3+L3*s1*s3)*(-L2*c3+L3*s1*s3)+(L1-L2*s3-L3*s1)*(L1-L2*s3-L3*s1)-z*z));   
-        }
-        else if(m_sName==RH){
+    x = cmdpos(0, 0);
+    y = cmdpos(0, 1);
+    z = cmdpos(0, 2);
+
+    x = x;
+    y = y - L3*sin(theta4);
+    z = z + L3*cos(theta4);
+    if(m_sName==LF)
+    {
+        float temp[3];
+        temp[0]=x;
+        temp[1]=y;
+        temp[2]=z;
+        x=temp[1];
+        y=temp[2];
+        z=temp[0];
+        jointCmdPos(0, 0)=atan2(L3+y,x);
+        float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+        jointCmdPos(2, 0)=atan2(L3*s1,L2)-atan2((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+        float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+        jointCmdPos(1, 0)=atan2(L2*c3+L3*s1*s3,L1+L2*s3-L3*s1*c3)-atan2(z,sqrt((L2*c3+L3*s1*s3)*(L2*c3+L3*s1*s3)+(L1+L2*s3-L3*s1*c3)*(L1+L2*s3-L3*s1*c3)-z*z));   
+    }
+    else if(m_sName==RF)
+    {
         float temp[3];
         temp[0]=x;
         temp[1]=y;
@@ -297,14 +273,119 @@ Matrix<float,3,1> CLeg::InverseKinematic(Matrix<float, 1, 3> cmdpos)
         x=-temp[1];
         y=-temp[2];
         z=temp[0];
+        L3 = 0;
+
         jointCmdPos(0, 0)=atan2(-L3+y,x);
         float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
-        jointCmdPos(2, 0)=atan2(-L3*s1,L2)-atan2((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+        jointCmdPos(2, 0)=atan2(L3*s1,L2)-atan2((x*x+y*y+z*z-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((L3*s1)*(L3*s1)+L2*L2-(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
         float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
-        jointCmdPos(1, 0)=atan2(L2*c3-L3*s1*s3,L1+L2*s3+L3*s1*s3)-atan2(-z,sqrt((L2*c3-L3*s1*s3)*(L2*c3-L3*s1*s3)+(L1+L2*s3+L3*s1)*(L1+L2*s3+L3*s1)-z*z));
-        }
-        
-        return jointCmdPos;
+        jointCmdPos(1, 0)=atan2(-L2*c3-L3*s1*s3,L1-L2*s3+L3*s1*c3)-atan2(-z,sqrt((-L2*c3-L3*s1*s3)*(-L2*c3-L3*s1*s3)+(L1-L2*s3+L3*s1*c3)*(L1-L2*s3+L3*s1*c3)-z*z));   
+    
+    }
+    else if(m_sName==LH){
+        float temp[3];
+        temp[0]=x;
+        temp[1]=y;
+        temp[2]=z;
+        x=temp[1];
+        y=temp[2];
+        z=temp[0];
+        jointCmdPos(0, 0)=atan2(L3+y,x);
+        float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+        jointCmdPos(2, 0)=atan2(-L3*s1,L2)-atan2(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+        float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+        jointCmdPos(1, 0)=atan2(-L2*c3+L3*s1*s3,L1-L2*s3-L3*s1*s3)-atan2(z,sqrt((-L2*c3+L3*s1*s3)*(-L2*c3+L3*s1*s3)+(L1-L2*s3-L3*s1)*(L1-L2*s3-L3*s1)-z*z));   
+    }
+    else if(m_sName==RH){
+    float temp[3];
+    temp[0]=x;
+    temp[1]=y;
+    temp[2]=z;
+    x=-temp[1];
+    y=-temp[2];
+    z=temp[0];
+    jointCmdPos(0, 0)=atan2(-L3+y,x);
+    float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+    jointCmdPos(2, 0)=atan2(-L3*s1,L2)-atan2((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+    float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+    jointCmdPos(1, 0)=atan2(L2*c3-L3*s1*s3,L1+L2*s3+L3*s1*s3)-atan2(-z,sqrt((L2*c3-L3*s1*s3)*(L2*c3-L3*s1*s3)+(L1+L2*s3+L3*s1)*(L1+L2*s3+L3*s1)-z*z));
+    }
+    
+    return jointCmdPos;
          
     
 }
+
+// Matrix<float,3,1> CLeg::InverseKinematic(Matrix<float, 1, 3> cmdpos)
+// {
+//     Matrix<float,3,1> jointCmdPos;
+//     float L1=m_fL1,L2=m_fL2,L3=m_fL3;
+//     float factor_x, factor_y, factor_z, factor_1, factor_2, factor_0;
+//     float x, y, z;
+ 
+//         x = cmdpos(0, 0);
+//         y = cmdpos(0, 1);
+//         z = cmdpos(0, 2);
+//         if(m_sName==LF)
+//         {
+//          float temp[3];
+//          temp[0]=x;
+//          temp[1]=y;
+//          temp[2]=z;
+//          x=temp[1];
+//          y=temp[2];
+//          z=temp[0];
+//          jointCmdPos(0, 0)=atan2(L3+y,x);
+//          float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+//          jointCmdPos(2, 0)=atan2(L3*s1,L2)-atan2((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+//          float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+//          jointCmdPos(1, 0)=atan2(L2*c3+L3*s1*s3,L1+L2*s3-L3*s1*c3)-atan2(z,sqrt((L2*c3+L3*s1*s3)*(L2*c3+L3*s1*s3)+(L1+L2*s3-L3*s1*c3)*(L1+L2*s3-L3*s1*c3)-z*z));   
+//         }
+//         else if(m_sName==RF)
+//         {
+//          float temp[3];
+//          temp[0]=x;
+//          temp[1]=y;
+//          temp[2]=z;
+//          x=-temp[1];
+//          y=-temp[2];
+//          z=temp[0];
+//          jointCmdPos(0, 0)=atan2(-L3+y,x);
+//          float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+//          jointCmdPos(2, 0)=atan2(L3*s1,L2)-atan2((x*x+y*y+z*z-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((L3*s1)*(L3*s1)+L2*L2-(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+//          float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+//          jointCmdPos(1, 0)=atan2(-L2*c3-L3*s1*s3,L1-L2*s3+L3*s1*c3)-atan2(-z,sqrt((-L2*c3-L3*s1*s3)*(-L2*c3-L3*s1*s3)+(L1-L2*s3+L3*s1*c3)*(L1-L2*s3+L3*s1*c3)-z*z));   
+//         }
+//         else if(m_sName==LH){
+//          float temp[3];
+//          temp[0]=x;
+//          temp[1]=y;
+//          temp[2]=z;
+//          x=temp[1];
+//          y=temp[2];
+//          z=temp[0];
+//          jointCmdPos(0, 0)=atan2(L3+y,x);
+//          float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+//          jointCmdPos(2, 0)=atan2(-L3*s1,L2)-atan2(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*(((x*x+y*y+z*z)-(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+//          float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+//          jointCmdPos(1, 0)=atan2(-L2*c3+L3*s1*s3,L1-L2*s3-L3*s1*s3)-atan2(z,sqrt((-L2*c3+L3*s1*s3)*(-L2*c3+L3*s1*s3)+(L1-L2*s3-L3*s1)*(L1-L2*s3-L3*s1)-z*z));   
+//         }
+//         else if(m_sName==RH){
+//         float temp[3];
+//         temp[0]=x;
+//         temp[1]=y;
+//         temp[2]=z;
+//         x=-temp[1];
+//         y=-temp[2];
+//         z=temp[0];
+//         jointCmdPos(0, 0)=atan2(-L3+y,x);
+//         float c1=cos(jointCmdPos(0, 0)),s1=sin(jointCmdPos(0, 0));
+//         jointCmdPos(2, 0)=atan2(-L3*s1,L2)-atan2((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1),sqrt((-L3*s1)*(-L3*s1)+L2*L2-((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))*((-(x*x+y*y+z*z)+(L1 * L1 + L2 * L2 + L3 * L3))/(2*L1))));
+//         float c3=cos(jointCmdPos(2, 0)),s3=sin(jointCmdPos(2, 0));
+//         jointCmdPos(1, 0)=atan2(L2*c3-L3*s1*s3,L1+L2*s3+L3*s1*s3)-atan2(-z,sqrt((L2*c3-L3*s1*s3)*(L2*c3-L3*s1*s3)+(L1+L2*s3+L3*s1)*(L1+L2*s3+L3*s1)-z*z));
+//         }
+        
+//         return jointCmdPos;
+         
+    
+// }

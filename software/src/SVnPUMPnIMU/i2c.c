@@ -152,7 +152,8 @@ NULL)
 
 	data->msgs[0].addr = addr;
 	data->msgs[0].flags = 0;
-	data->msgs[0].len = 2;
+	// data->msgs[0].len = 2;
+	data->msgs[0].len = len + 1;
 	data->msgs[0].buf[0] = reg;
 	for(i = 0; i < len; i++)
 	{
@@ -171,6 +172,45 @@ errexit2:
 
 	return ret;
 }
+int 
+i2c_write_data_no_reg(u8 addr, u8 *val, u32 len)
+{
+    int ret = 0, i;
+    struct i2c_rdwr_ioctl_data *data;
+
+    if ((data = (struct i2c_rdwr_ioctl_data *)malloc(sizeof(struct i2c_rdwr_ioctl_data))) == NULL)
+        return -1;
+
+    data->nmsgs = 1;
+    if ((data->msgs = (struct i2c_msg *)malloc(data->nmsgs * sizeof(struct i2c_msg))) == NULL) {
+        ret = -1;
+        goto errexit2;
+    }
+    if ((data->msgs[0].buf = (unsigned char *)malloc(len * sizeof(unsigned char))) == NULL) {
+        ret = -1;
+        goto errexit1;
+    }
+
+    data->msgs[0].addr = addr;
+    data->msgs[0].flags = 0;
+    data->msgs[0].len = len;
+    for(i = 0; i < len; i++) {
+        data->msgs[0].buf[i] = val[i];
+    }
+
+    if ((ret = __i2c_send(fd, data)) < 0)
+        goto errexit0;
+
+errexit0:
+    free(data->msgs[0].buf);
+errexit1:
+    free(data->msgs);
+errexit2:
+    free(data);
+
+    return ret;
+}
+
 
 int
 i2c_open(unsigned char* dev, unsigned int timeout, unsigned int retry)

@@ -58,6 +58,10 @@ file(GLOB TEST
 	"./src/test.cpp"
 )
 
+file(GLOB IK
+	"./src/ivk_test.cpp"
+)
+
 file(GLOB VIBRA
      "./src/vibra.cpp"
 )
@@ -69,6 +73,9 @@ file(GLOB IMUTEST
 
   ADD_EXECUTABLE(main ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC} ${DYNAMIXEL_SRC}) 
   target_link_libraries(main -lwiringPi ${DYNAMIXELLIB} /usr/local/lib/libqpOASES.a -lpthread)
+
+#   ADD_EXECUTABLE(ivk_test ${IK} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC} ${DYNAMIXEL_SRC}) 
+#   target_link_libraries(ivk_test -lwiringPi ${DYNAMIXELLIB} /usr/local/lib/libqpOASES.a -lpthread)
 
 # ADD_EXECUTABLE(test ${TEST} ${SVPUMPIMU_SRC} ${INA219_SRC} ${DYNAMIXEL_SRC} ${MOTIONCONTROL_SRC}) 
 # target_link_libraries(test -lwiringPi ${DYNAMIXELLIB} /usr/local/lib/libqpOASES.a -lpthread)

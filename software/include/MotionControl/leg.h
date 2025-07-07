@@ -22,7 +22,7 @@ public:
     void setTouchStatus(bool status);
     bool getTouchStatus();
     Matrix<float,3,1> ForwardKinematic();
-    Matrix<float,3,1> InverseKinematic(Matrix<float, 1, 3> cmdpos);   // standing state
+    Matrix<float,3,1> InverseKinematic(Matrix<float, 1, 3> cmdpos, float theta4);   // standing state
     void ChangeStatus(enum_LEGSTATUS legStatus);
     enum_LEGSTATUS GetLegStatus();
 };

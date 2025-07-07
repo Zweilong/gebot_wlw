@@ -65,7 +65,8 @@ public:
     Matrix<float, 4, 3> mfJointCompDis;  // compensation joint angle
     Matrix<float, 4, 3> mfCompensation;
     Matrix<float, 4, 3> mfLegCmdCompPos;// 
-    Matrix<float, 4, 3> mfShoulderPosCompensation;//  
+    Matrix<float, 4, 3> mfShoulderPosCompensation;//
+    Matrix<float, 4, 1> theta4;// the last joint angle of leg  
     float comForce;
     bool BSwingPhaseStartFlag, BSwingPhaseEndFlag;
     vector<float> vLastSetPos;
@@ -80,7 +81,7 @@ public:
     void UpdatejointPresVel();
     void UpdateJacobians();
     void ForwardKinematics(int mode);
-    void InverseKinematics(Matrix<float, 4, 3> cmdpos);   // standing state
+    void InverseKinematics(Matrix<float, 4, 3> cmdpos, Matrix<float, 4, 1> theta4);   // standing state
     void UpdateFtsPresVel(); 
     void UpdateTouchStatus(vector<int> values,vector<int> prevalues,vector<int> preprevalues);
     void UpdateLegStatus(int legNum);
@@ -91,8 +92,8 @@ public:
     
     //robot control
     //pump control
-     uint8_t svStatus=0b00000000;
-     API api;
+    uint8_t svStatus=0b00000000;
+    API api;
     void AirControl();
     void PumpNegtive(int legNum);
     void PumpPositive(int legNum);
@@ -100,10 +101,12 @@ public:
     void PumpAllPositve();
     void PumpAllClose();
     void contactMega();
-    void MegaPumpAllNegtive();
-    void MegaPumpAllPositve();
+    void setMegaPump();
+    void setMegaPump2();
+    void setMegaPumpInit();
+    void MegaPumpNegative(int legNum);
     void MegaPumpPositive(int legNum);
-    void MegaPumpNegtive(int legNum);
+    void MegaPumpControl();
     //motor control
      
     //DxlAPI dxlMotors;  //3000000  cannot hold 6 legs ttyUSB0 ttyAMA0

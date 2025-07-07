@@ -39,7 +39,8 @@ i2c_write_data(u8 addr, u8 reg, u8 *val, u32 len);
 
 int
 i2c_write_data_oneByte(u8 addr, u8 reg, u8 *val, u32 len);
-
+int
+i2c_write_data_no_reg(u8 addr, u8 *val, u32 len);
 int
 i2c_open(unsigned char* dev, unsigned int timeout, unsigned int retry);
 

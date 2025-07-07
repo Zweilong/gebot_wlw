@@ -63,7 +63,7 @@ public:
     void setPump(u8 num, u8 status);
     void updateIMU();
     void updatePowerStatus();
-
+    void sendMegaAirData(std::string data);
     uint8_t svStatus;
     
 };

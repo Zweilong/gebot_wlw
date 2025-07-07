@@ -55,28 +55,28 @@ void *udpConnect(void *data)
         if(ret) {runFlag=0; goto END;}
         ret=commandJudge((char*)string("ChangeStancePos").c_str(),(char *)buf.c_str());
         if(ret) {   
-                    // std::lock_guard<std::mutex> lock(mtx_choosePosNum);  
-                    // std::lock_guard<std::mutex> lock2(mtx_LastJointPos);  
-                    // ++choosePosNum;
-                    // ++LastJointPos;
+                    //erro: 不管这个command内容是什么，按下c，机器人会自动继续运行
                     goto END;
                 }
         ret=commandJudge((char*)string("xed").c_str(),(char *)buf.c_str());
         if(ret){
-                    std::lock_guard<std::mutex> lock(mtx_choosePosNum);  
-                    std::lock_guard<std::mutex> lock2(mtx_LastJointPos);  
-                    std::lock_guard<std::mutex> lock3(mtx_curveFlag);  // 同时锁住curveFlag
+                    rbt.setMegaPump();
+                    // std::lock_guard<std::mutex> lock(mtx_choosePosNum);  
+                    // std::lock_guard<std::mutex> lock2(mtx_LastJointPos);  
+                    // std::lock_guard<std::mutex> lock3(mtx_curveFlag);  // 同时锁住curveFlag
 
-                    curveFlag = 1;
-                    LastJointPos = std::min(LastJointPos + 1, 4);  
-                    // choosePosNum = std::min(LastJointPos + 1, 2);  
-                    choosePosNum = 1;
+                    // curveFlag = 1;
+                    // LastJointPos = std::min(LastJointPos + 1, 4);  
+                    // // choosePosNum = std::min(LastJointPos + 1, 2);  
+                    // choosePosNum = 1;
                     goto END;
                }
         ret=commandJudge((char*)string("pumpPositive").c_str(),(char *)buf.c_str());
-        if(ret) {rbt.PumpAllPositve(); goto END;}
+        if(ret) {rbt.setMegaPump2(); goto END;}
+        // if(ret) {rbt.PumpAllPositve(); goto END;}
         ret=commandJudge((char*)string("pumpNegative").c_str(),(char *)buf.c_str());
-        if(ret) {rbt.PumpAllNegtive(); goto END;}
+        if(ret) {rbt.setMegaPumpInit(); goto END;}
+        // if(ret) {rbt.PumpAllNegtive(); goto END;}
         ret=commandJudge((char*)string("0").c_str(),(char *)buf.c_str());
         if(ret) {legChosen=0; goto END;}
         ret=commandJudge((char*)string("1").c_str(),(char *)buf.c_str());
@@ -333,7 +333,7 @@ void *robotStateUpdateSend(void *data)
     rbt.InertiaInit();
     rbt.Init();
     rbt.SetCoMVel(TCV);
-    rbt.InverseKinematics(rbt.mfLegCmdPos);
+    rbt.InverseKinematics(rbt.mfLegCmdPos, rbt.theta4);
     rbt.mfTargetPos = rbt.mfLegCmdPos;
 
 #if(INIMODE==2)  
@@ -346,7 +346,6 @@ void *robotStateUpdateSend(void *data)
     usleep(1e5);
     for (size_t i = 0; i < 4; i++)
         rbt.PumpNegtive(i);
-        // rbt.MegaPumpNegtive(i);
     
     usleep(1e6);
     rbt.bInitFlag = 1;
@@ -360,7 +359,6 @@ void *robotStateUpdateSend(void *data)
     while(1)
     {
         // rbt.contactMega(); //test
-        // rbt.contactMega();
         if(curveFlag)
         {
             std::lock_guard<std::mutex> lock(mtx_curveFlag);  // 加锁
@@ -387,29 +385,31 @@ void *robotStateUpdateSend(void *data)
                 for(int j=0;j<3;j++)
                 {
                     InitPos(i, j) = float_initPos[i*3+j]/1000;
-                    //cout<<InitPos(i, j)<<endl;
-                }
-            // rbt.mfLegCmdPos = InitPos;     
+                }  
             rbt.SetInitPos(InitPos);
         }
+
         if(runFlag){
+            cout<<"111111111"<<endl;
             struct timeval startTime={0,0},endTime={0,0};
             double timeUse=0.0;
             gettimeofday(&startTime,NULL);
             //If stay static, annotate below one line.
             // if(rbt.runTimes==0){
-          
+            
             rbt.NextStep();
+            // rbt.setMegaPump();
+            
             // rbt.CalGravity();
             
-            //     for(int i=0;i<4;i++){
-            //         for(int j=0;j<3;j++)
-            //         {
-            //             legcmdpos<<rbt.mfLegCmdPos(i,j)<<",";
-            //         }
-            //         legcmdpos<<endl;
-            //     }
-               cout<<"rbt.legcmdpos:"<<rbt.mfLegCmdPos<<endl;
+                // for(int i=0;i<4;i++){
+                //     for(int j=0;j<3;j++)
+                //     {
+                //         legcmdpos<<rbt.mfLegCmdPos(i,j)<<",";
+                //     }
+                //     legcmdpos<<endl;
+                // }
+            cout<<"rbt.legcmdpos:"<<rbt.mfLegCmdPos<<endl;
             // }
             // else{
             //            cout<<"write finished"<<endl;
@@ -417,20 +417,16 @@ void *robotStateUpdateSend(void *data)
             //            break;
             // }
              
-           rbt.AirControl();
+            // rbt.AirControl();
+            rbt.MegaPumpControl();
 
            //rbt.AttitudeCorrection180();
             /*******************vibration*************/
           
-            //     cout<<"z:"<<z<<endl;
+
             /************************************/
         
             rbt.ParaDeliver();
-            
-            // //cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;    
-            // cout<<"t: "<<t<<endl;
-             //cout<<"TargetPos:\n"<<rbt.mfTargetPos<<endl<<endl; 
-            // cout<<"Compensation:\n"<<rbt.mfCompensation<<endl<<endl; 
 
             gettimeofday(&endTime,NULL);
             timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
@@ -438,10 +434,10 @@ void *robotStateUpdateSend(void *data)
                 usleep(1.0/loopRateStateUpdateSend*1e6 - (double)(timeUse) - 10); 
             else
             cout<<"TimeRobotStateUpdateSend: "<<timeUse<<endl;
+            
         }
     }
 }
-
 void *runImpCtller(void *data)
 {
     struct timeval startTime={0,0},endTime={0,0};
@@ -492,7 +488,7 @@ void *runImpCtller(void *data)
             //  rbt.CaloutForce();
             //  rbt.CalTargetForce();
              //cout<<"targetForce:"<<rbt.mfTargetForce<<endl;
-             rbt.Control();   
+            //  rbt.Control();   
            // rbt.VibrationControl_quad(k,1,800.0/1000);
             // rbt.InverseKinematics(rbt.mfXc);    // Admittance control
             // cout<<"mfForce:"<<rbt.mfForce<<endl;
@@ -533,7 +529,7 @@ void *runImpCtller(void *data)
             //cout<<"tempM"<<tempM<<endl;
             // Matrix<float,4,3> vibraPos=rbt.mfTargetPos+tempM;
             //Matrix<float,4,3> vibraPos=rbt.mfLegCmdPos+tempM;
-            //rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
+            // rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
             if(opFlag==1){
             cout<<rbt.mfLegCmdPos<<endl;
             opFlag=0;
@@ -543,7 +539,7 @@ void *runImpCtller(void *data)
              //cout<<mfLegCmdCompPos1<<endl;
             //rbt.InverseKinematics(mfLegCmdCompPos1); 
             /*      Postion control      */
-            rbt.InverseKinematics(rbt.mfLegCmdPos); 
+            rbt.InverseKinematics(rbt.mfLegCmdPos, rbt.theta4); //    Postion control
            // cout<<"mfLegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
             //cout<<"mfJointCmdPos:\n"<<rbt.mfJointCmdPos<<endl;
             // cout<<"mfLegCmdPos: \n"<<rbt.mfLegCmdPos<<endl;
@@ -554,7 +550,7 @@ void *runImpCtller(void *data)
             // cout<<endl;
 
             /*      Set joint angle      */
-          //  cout<<"-------------------------------------------"<<endl;
+            //  cout<<"-------------------------------------------"<<endl;
             SetPos(rbt.mfJointCmdPos,motors,rbt.vLastSetPos);
 
             /*      Impedance control      */
