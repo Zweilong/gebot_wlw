@@ -1,5 +1,6 @@
 #include "gebot.h"
 extern int LastJointPos; 
+extern bool runFlag;
 //extern bool runFlag = false;
 bool swingtimeFlag = false;
 CGebot::CGebot(float length,float width,float height,float mass)
@@ -38,7 +39,7 @@ CGebot::CGebot(float length,float width,float height,float mass)
     runTimes=0;
     BSwingPhaseStartFlag = true;
     autoControlFlag=true;
-    BSwingPhaseEndFlag = 0;     //
+    BSwingPhaseEndFlag = 0;     
     mfCompensation.setZero();
     mfJointCompDis.setZero();
 
@@ -322,10 +323,11 @@ void CGebot::UpdatejointPresPosAndVel(vector<float> present_position)
 {
     mfJointPresPos=inverseMotorMapping(present_position);
     float offSet[]= OFFSET;
+    float offSetOutput[4];
+    for(int i=0;i<4;i++)
+        offSetOutput[i]=offSet[i] + extraOffset[i]; // extra offset of each leg, for single step last jontpos modify
     for (int i =0;i<4;i++)
-        mfJointPresPos(i,3)=mfJointPresPos(i,3)-offSet[i];
-    //cout<<"mfJointPresPos: " <<mfJointPresPos<<endl;
-    // cout<<"mfJointLastPos: " <<mfJointLastPos<<endl;
+        mfJointPresPos(i,3)=mfJointPresPos(i,3)-offSetOutput[i];
     for(int legNum=0;legNum<4;legNum++)
     {   
         Matrix<float,4,1> temp=mfJointPresPos.block(legNum,0,1,4).transpose();
@@ -334,14 +336,6 @@ void CGebot::UpdatejointPresPosAndVel(vector<float> present_position)
 
     mfJointPresVel=(mfJointPresPos-mfJointLastPos)*loopRateCommandUpdate;
     mfJointLastPos=mfJointPresPos;
-    //cout<<"mfJointPresVel: " <<mfJointPresVel<<endl;
-    // static int t=0;
-    // t++;
-    // if(t%16==0){
-    //     cout<<"vel= "<<mfJointPresVel<<endl;
-    //     // cout<<"\t torque= " <<temp.row(1)<<endl;
-    //     t=1;
-    // }
 }
 
 /**
@@ -490,7 +484,6 @@ void CGebot::NextStep()
     {                                                            // if so, set it to 0.0
        runTimes++;
     }
-    cout<<"222222"<<endl;
 }
 
 /**
@@ -555,11 +548,28 @@ void CGebot::MegaPumpPositive(int legNum)
 
 void CGebot::MegaPumpControl()
 {
+    static int temppp[4] = {0};
     for(int legNum=0;legNum<4;legNum++)   
     {
         if(m_glLeg[legNum]->GetLegStatus()==swingDown)  //attach
         {
+            int duration = iStatusCounterBuffer[legNum][int(swingDown)];
+            int count = iStatusCounter[legNum];
             MegaPumpPositive(legNum);
+            if(count >= duration * 0.9)
+            {
+                if(legNum == 0) extraOffset[legNum] = 0.1; // LF
+                else if(legNum == 1) extraOffset[legNum] = -0.1; // RF
+                else if(legNum == 2) extraOffset[legNum] = 0.1; // LH
+                else if(legNum == 3) extraOffset[legNum] = -0.1; // RH
+                singleStepModify();
+                // temppp[legNum]++;
+                // cout<<"temppp[0]= "<<temppp[0]<<endl;
+                // cout<<"temppp[1]= "<<temppp[1]<<endl;
+                // cout<<"temppp[2]= "<<temppp[2]<<endl;
+                // cout<<"temppp[3]= "<<temppp[3]<<endl;
+
+            }
         }
         else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
@@ -571,10 +581,19 @@ void CGebot::MegaPumpControl()
         }
         else if(m_glLeg[legNum]->GetLegStatus()==detach){
              MegaPumpNegative(legNum);
+                if(legNum == 0) extraOffset[legNum] = -0.1; // LF
+                else if(legNum == 1) extraOffset[legNum] = 0.1; // RF
+                else if(legNum == 2) extraOffset[legNum] = -0.1; // LH
+                else if(legNum == 3) extraOffset[legNum] = 0.1; // RH
+                temppp[legNum]++;
+                cout<<"temppp[0]= "<<temppp[0]<<endl;
+                cout<<"temppp[1]= "<<temppp[1]<<endl;
+                cout<<"temppp[2]= "<<temppp[2]<<endl;
+                cout<<"temppp[3]= "<<temppp[3]<<endl;
         }        
     }
 
-}
+} //由于setpos里面我们定义偏置是固定每次动作都是按照这个偏置来的，所以在这里即使执行多次，由于不是累加，每次都是一样，故而即使按照原来状态的时间片执行，视觉上还是只变化一次 
 
 //iic contact mega s
 void CGebot::contactMega()
@@ -1054,4 +1073,21 @@ Matrix<float,4,3> CGebot::FnnStepModify()
         return mfLegCmdCompPos-mfShoulderPos.block(0,0,3,3);
         //结束   
         
+}
+
+void CGebot::singleStepModify()
+{
+ runFlag = 0;
+ static int singleStepCount = 40;
+ for(uint8_t legNum=0; legNum<4; legNum++) 
+ {
+    if(singleStepCount>0)
+    {   
+        singleStepCount--;
+        mfLegCmdPos(legNum, 0) += 0;
+        mfLegCmdPos(legNum, 1) += 0;
+        mfLegCmdPos(legNum, 2) += 0.01;
+    }
+ }
+
 }

@@ -61,34 +61,20 @@ void *udpConnect(void *data)
         ret=commandJudge((char*)string("xed").c_str(),(char *)buf.c_str());
         if(ret){
                     rbt.setMegaPump();
-                    // std::lock_guard<std::mutex> lock(mtx_choosePosNum);  
-                    // std::lock_guard<std::mutex> lock2(mtx_LastJointPos);  
-                    // std::lock_guard<std::mutex> lock3(mtx_curveFlag);  // 同时锁住curveFlag
-
-                    // curveFlag = 1;
-                    // LastJointPos = std::min(LastJointPos + 1, 4);  
-                    // // choosePosNum = std::min(LastJointPos + 1, 2);  
-                    // choosePosNum = 1;
                     goto END;
                }
         ret=commandJudge((char*)string("pumpPositive").c_str(),(char *)buf.c_str());
         if(ret) {rbt.setMegaPump2(); goto END;}
-        // if(ret) {rbt.PumpAllPositve(); goto END;}
         ret=commandJudge((char*)string("pumpNegative").c_str(),(char *)buf.c_str());
         if(ret) {rbt.setMegaPumpInit(); goto END;}
-        // if(ret) {rbt.PumpAllNegtive(); goto END;}
-        ret=commandJudge((char*)string("0").c_str(),(char *)buf.c_str());
-        if(ret) {legChosen=0; goto END;}
+        ret=commandJudge((char*)string("7").c_str(),(char *)buf.c_str());
+        if(ret) {legChosen=0;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
+        ret=commandJudge((char*)string("9").c_str(),(char *)buf.c_str());
+        if(ret){legChosen=1;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
         ret=commandJudge((char*)string("1").c_str(),(char *)buf.c_str());
-        if(ret) {legChosen=1; goto END; goto END;}
-        ret=commandJudge((char*)string("2").c_str(),(char *)buf.c_str());
-        if(ret) {legChosen=2; goto END;opFlag=1; goto END;}
+        if(ret) {legChosen=2;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
         ret=commandJudge((char*)string("3").c_str(),(char *)buf.c_str());
-        if(ret) {legChosen=3; goto END;opFlag=1; goto END;}
-        ret=commandJudge((char*)string("forward").c_str(),(char *)buf.c_str());
-        if(ret) {rbt.mfLegCmdPos(legChosen,2)+=0.001; opFlag=1;goto END;}
-        ret=commandJudge((char*)string("back").c_str(),(char *)buf.c_str());
-        if(ret) {rbt.mfLegCmdPos(legChosen,2)-=0.001; opFlag=1;goto END;}
+        if(ret) {legChosen=3;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
         ret=commandJudge((char*)string("left").c_str(),(char *)buf.c_str());
         if(ret) {Matrix<float, 6,1> TCV;
                 TCV<<0,3.0/1000,0,0,0,0;
@@ -113,17 +99,9 @@ void *udpConnect(void *data)
                 rbt.SetCoMVel(TCV); 
                 runFlag=1;
                 goto END;}
-        // int ret=match((char*)string("start").c_str(),(char*)string("startsada").c_str());
-        // cout<<(char*)string("start").c_str()<<endl;
-        // cout<<ret<<endl;
-		//发��数捄1�71ￄ1�771ￄ1�71ￄ1�7771ￄ1�71ￄ1�771ￄ1�71ￄ1�7777
         END:
 		buf.clear();
-		// cout << "server say: ";
-		// cin >> buf;
-		// CHECK_RET(srv_sock.Send(buf, peer_ip, peer_port));
 	}
-	//关闭套接孄1�71ￄ1�771ￄ1�71ￄ1�7771ￄ1�71ￄ1�771ￄ1�71ￄ1�7777
 	srv_sock.Close();
 	return 0;
 }
@@ -470,66 +448,8 @@ void *runImpCtller(void *data)
           
             rbt.UpdateFtsPresVel();
             rbt.UpdateFtsPresForce(motors.present_torque);  
-           // ringBuffer_force.push(rbt.mfForce);
-            //cout<<"preVel"<<rbt.mfLegPresVel<<endl;
-            //cout<<"mfForce"<<rbt.mfForce<<endl;
-            // cout<<"torque: ";
-            // for(auto a:motors.present_torque)
-            //     cout<<a<<" ";
-            // cout<<endl;
-            // for (size_t i = 0; i < 12; i++)
-            // {
-            //     torque[i] = rbt.dxlMotors.present_torque[i];
-            // }            
-
-
-            // /*      Admittance control     */ 
-            //  rbt.CalSpringForce();
-            //  rbt.CaloutForce();
-            //  rbt.CalTargetForce();
-             //cout<<"targetForce:"<<rbt.mfTargetForce<<endl;
-            //  rbt.Control();   
-           // rbt.VibrationControl_quad(k,1,800.0/1000);
-            // rbt.InverseKinematics(rbt.mfXc);    // Admittance control
-            // cout<<"mfForce:"<<rbt.mfForce<<endl;
-            // cout<<"xc_dotdot: \n"<<rbt.mfXcDotDot<<"; \nxc_dot: \n"<<rbt.mfXcDot<<"; \nxc: \n"<<rbt.mfXc<<endl;
-             /*      Postion control with Comp      */   
-            // 重置标志
            bool isAllStance=true;
-           //t=program_run_time.load(); //0.5 to equal the sin curve
-           //cout<<"t"<<t<<endl;
-        //    float z=quadSprings(t,OMEGA,Y0);
-        //    float cmp;
-        //    float cmp2;
-        //    cmp2=-0/1000;
-        //    if(z>0)
-        //     cmp=0/1000;
-        //    if(z<=0)
-        //     cmp=0/1000;
-
-        //    Matrix<float,4,3> tempM;
-        //    tempM<<0,0,z+cmp,
-        //         0,0,z+cmp,
-        //         0,0,z+cmp,
-        //         0,0,z+cmp;
-        //     for(int legnum=0;legnum<4;legnum++){
-        //         if(rbt.m_glLeg[legnum]->GetLegStatus()!=stance&&rbt.m_glLeg[legnum]->GetLegStatus()!=recover){
-        //         // tempM.row(legnum)<<0,0,0;
-        //         // tempM.row(3-legnum)<<0,0,cmp2;
-        //         isAllStance=false;
-                
-        //         } 
-        //     }
-        //     if(isAllStance){
-        //         tempM<<0,0,z+0/1000,
-        //                0,0,z+0/1000,
-        //                0,0,z+0/1000,
-        //                0,0,z+0/1000;
-        //     }
-            //cout<<"tempM"<<tempM<<endl;
-            // Matrix<float,4,3> vibraPos=rbt.mfTargetPos+tempM;
-            //Matrix<float,4,3> vibraPos=rbt.mfLegCmdPos+tempM;
-            // rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
+          
             if(opFlag==1){
             cout<<rbt.mfLegCmdPos<<endl;
             opFlag=0;
@@ -540,14 +460,6 @@ void *runImpCtller(void *data)
             //rbt.InverseKinematics(mfLegCmdCompPos1); 
             /*      Postion control      */
             rbt.InverseKinematics(rbt.mfLegCmdPos, rbt.theta4); //    Postion control
-           // cout<<"mfLegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
-            //cout<<"mfJointCmdPos:\n"<<rbt.mfJointCmdPos<<endl;
-            // cout<<"mfLegCmdPos: \n"<<rbt.mfLegCmdPos<<endl;
-            // cout<<"target_pos: \n"<<rbt.mfTargetPos<<endl;
-            // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
-            //cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
-             //cout<<"xc_dotdot: \n"<<rbt.mfXcDotDot<<"; \nxc_dot: \n"<<rbt.mfXcDot<<"; \nxc: \n"<<rbt.mfXc<<endl;
-            // cout<<endl;
 
             /*      Set joint angle      */
             //  cout<<"-------------------------------------------"<<endl;

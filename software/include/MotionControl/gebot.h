@@ -87,6 +87,7 @@ public:
     void UpdateLegStatus(int legNum);
     Matrix<float, 3, 1> FnnOutputcpt(VectorXd vec);
     Matrix<float, 4, 3> FnnStepModify();
+    void singleStepModify();
     void AttitudeCorrection180();
     void AttitudeCorrection90();
     

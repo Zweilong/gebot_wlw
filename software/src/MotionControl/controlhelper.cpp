@@ -1,6 +1,7 @@
 #include "controlhelper.h"
 #include <string>
 extern int LastJointPos; 
+float extraOffset[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 /**
  * @brief 
  * Open the file to read float data to dest.    
@@ -187,7 +188,7 @@ void SetPos(Matrix<float,4,3> jointCmdPos,DxlAPI& motors,vector<float>& vLastSet
          setPos[i+12]=-jointCmdPos(i,0);
         else
          setPos[i+12]=jointCmdPos(i,0);
-    }
+    }  //???????????????????
    
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 3; ++j) {
@@ -211,39 +212,17 @@ void SetPos(Matrix<float,4,3> jointCmdPos,DxlAPI& motors,vector<float>& vLastSet
         }
     }
 
-    // Ensure to set the last 4 positions correctly
+    // Ensure to set the last 4 positions correctly ???????
     float offSet[]= OFFSET;
-    float offSet1[]= OFFSET1;
-    float offSet2[]= OFFSET2;
-    float offSet3[]= OFFSET3;
-    float offSet4[]= OFFSET4;
-    float* offSetOutput;
-    if(LastJointPos==0)
-    {
-        offSetOutput = offSet;
-    }
-    else if(LastJointPos==1)
-    {
-        offSetOutput = offSet1;
-    }
-    else if(LastJointPos==2)
-    {
-        offSetOutput = offSet2;
-    }
-    else if(LastJointPos==3)
-    {
-        offSetOutput = offSet3;
-    }
-    else if (LastJointPos==4)
-    {
-        offSetOutput = offSet4;
-    }       
+    float offSetOutput[4];
+    for (int i = 0; i < 4; ++i) {
+    offSetOutput[i] = offSet[i] + extraOffset[i];
+    }    
     for (int i = 12; i < 16; ++i) {
         vLastSetPos[i] = setPos[i]+offSetOutput[i-12];
     }
 
     motors.setPosition(vLastSetPos);
-    // cout<<"vlastsetpos: " << vLastSetPos <<endl;
 }
 
 MatrixXf pinv(Eigen::MatrixXf  A,float pinvtoler)

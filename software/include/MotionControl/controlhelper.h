@@ -20,4 +20,7 @@ int match(char *P,char *T);
 int *buildNext(char *P);
 bool commandJudge(char *P,char* T);
 void writeMatrixToCSV(const std::string& filename, const Matrix<float, 4, 3>& matrix);
+
+/*********************** */
+extern float extraOffset[4];
 #endif
