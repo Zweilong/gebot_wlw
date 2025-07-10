@@ -1,8 +1,13 @@
 #include "gebot.h"
 extern int LastJointPos; 
 extern bool runFlag;
+extern bool opFlag;
+extern bool singleStepFlag;
 //extern bool runFlag = false;
 bool swingtimeFlag = false;
+void Delayms(unsigned short ms) {
+    usleep(ms * 1000);  // usleep µ•Œª «Œ¢√Î
+}
 CGebot::CGebot(float length,float width,float height,float mass)
 {
     // theta4.setZero();
@@ -42,6 +47,7 @@ CGebot::CGebot(float length,float width,float height,float mass)
     BSwingPhaseEndFlag = 0;     
     mfCompensation.setZero();
     mfJointCompDis.setZero();
+    legnumForSingleStep = 0;
 
     for(int i=0;i<16;++i)
         vLastSetPos.push_back(0);
@@ -562,7 +568,8 @@ void CGebot::MegaPumpControl()
                 else if(legNum == 1) extraOffset[legNum] = -0.1; // RF
                 else if(legNum == 2) extraOffset[legNum] = 0.1; // LH
                 else if(legNum == 3) extraOffset[legNum] = -0.1; // RH
-                singleStepModify();
+                legnumForSingleStep = legNum;
+                singleStepFlag = 1;
                 // temppp[legNum]++;
                 // cout<<"temppp[0]= "<<temppp[0]<<endl;
                 // cout<<"temppp[1]= "<<temppp[1]<<endl;
@@ -1075,19 +1082,38 @@ Matrix<float,4,3> CGebot::FnnStepModify()
         
 }
 
-void CGebot::singleStepModify()
+void CGebot::singlegStepModify(uint8_t legNum)
 {
  runFlag = 0;
- static int singleStepCount = 40;
- for(uint8_t legNum=0; legNum<4; legNum++) 
+ static int singleStepCount = 20;
+ static int singleStepCount2 = 20;
+ static int a =0;
+ for(int i=0;i<40;i++) 
  {
     if(singleStepCount>0)
-    {   
+    {    opFlag = 1;
         singleStepCount--;
+        a++;
         mfLegCmdPos(legNum, 0) += 0;
         mfLegCmdPos(legNum, 1) += 0;
-        mfLegCmdPos(legNum, 2) += 0.01;
+        mfLegCmdPos(legNum, 2) += 0.001;
+        cout<<"test "<< a<<endl;
+        cout<<"mflegcmdpos:"<<mfLegCmdPos(legNum,2)<<endl;
+        Delayms(100);
+    }
+    if(singleStepCount2>0 && singleStepCount<=0)
+    {
+        singleStepCount2--;
+        mfLegCmdPos(legNum, 0) += 0;
+        mfLegCmdPos(legNum, 1) += 0;
+        mfLegCmdPos(legNum, 2) -= 0.001;
+        Delayms(100);
+    }
+    if(i=40)
+    {
+        opFlag = 0;
     }
  }
+
 
 }

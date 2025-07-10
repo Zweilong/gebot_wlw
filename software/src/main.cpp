@@ -13,6 +13,7 @@ DxlAPI motors("/dev/ttyAMA0", 3000000, rbt.ID, 2);
 // std::atomic<bool> runFlag(true); 
 bool runFlag = 0;
 bool curveFlag = 0;
+bool singleStepFlag = 0;
 int choosePosNum = 0;
 int LastJointPos = 0;
 std::mutex mtx_curveFlag;
@@ -21,7 +22,9 @@ std::mutex mtx_LastJointPos;
 std::atomic<float> program_run_time(0.0);
 boost::lockfree::spsc_queue<vector<float>, boost::lockfree::capacity<1024>> ringBuffer_torque;
 boost::lockfree::spsc_queue<Matrix<float,3,4>, boost::lockfree::capacity<1024>> ringBuffer_force;
-
+// void Delayms(unsigned short ms) {
+//     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+// }
 bool opFlag=0;
 void *udpConnect(void *data)
 {
@@ -67,11 +70,11 @@ void *udpConnect(void *data)
         if(ret) {rbt.setMegaPump2(); goto END;}
         ret=commandJudge((char*)string("pumpNegative").c_str(),(char *)buf.c_str());
         if(ret) {rbt.setMegaPumpInit(); goto END;}
-        ret=commandJudge((char*)string("7").c_str(),(char *)buf.c_str());
+        ret=commandJudge((char*)string("0").c_str(),(char *)buf.c_str());
         if(ret) {legChosen=0;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
-        ret=commandJudge((char*)string("9").c_str(),(char *)buf.c_str());
-        if(ret){legChosen=1;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
         ret=commandJudge((char*)string("1").c_str(),(char *)buf.c_str());
+        if(ret){legChosen=1;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
+        ret=commandJudge((char*)string("2").c_str(),(char *)buf.c_str());
         if(ret) {legChosen=2;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
         ret=commandJudge((char*)string("3").c_str(),(char *)buf.c_str());
         if(ret) {legChosen=3;rbt.mfLegCmdPos(legChosen,2)-=0.010;opFlag=1;goto END;}
@@ -366,16 +369,21 @@ void *robotStateUpdateSend(void *data)
                 }  
             rbt.SetInitPos(InitPos);
         }
+        if(singleStepFlag){
+            // Delayms(1000);
+            int legNum = rbt.legnumForSingleStep;
+            // rbt.mfLegCmdPos(legNum,2)+=0.010;
+            rbt.singlegStepModify(legNum);
+        }
 
         if(runFlag){
-            cout<<"111111111"<<endl;
             struct timeval startTime={0,0},endTime={0,0};
             double timeUse=0.0;
             gettimeofday(&startTime,NULL);
             //If stay static, annotate below one line.
             // if(rbt.runTimes==0){
-            
             rbt.NextStep();
+
             // rbt.setMegaPump();
             
             // rbt.CalGravity();
@@ -668,8 +676,6 @@ void *timeUpdate(void *date)
 
 int main(int argc, char ** argv)
 {   
-    
-    
     pthread_t th1, th2, th3, th4,th5,th6;
 	int ret;
     ret = pthread_create(&th1,NULL,udpConnect,NULL);

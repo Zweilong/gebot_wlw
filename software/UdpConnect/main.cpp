@@ -129,19 +129,19 @@ int main(int argc, char *argv[])
             buf = "xed";
             goto SEND;
         }
-        if(command=='7')
+        if(command=='0')
         {
-            buf = "7";
+            buf = "0";
             goto SEND;
         }        
-        if()(command=='9')
-        {
-            buf = "9";
-            goto SEND;
-        }
         if(command=='1')
         {
             buf = "1";
+            goto SEND;
+        }
+        if(command=='2')
+        {
+            buf = "2";
             goto SEND;
         }       
         if(command=='3')

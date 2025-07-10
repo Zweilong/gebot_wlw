@@ -3,6 +3,11 @@
 using namespace Eigen;
 using namespace std;
 extern bool swingtimeFlag;
+// delay.h
+#pragma once
+
+void Delayms(unsigned short ms);
+
 class CGebot{
 
 public:
@@ -18,6 +23,7 @@ public:
     float fTimePeriod;  // The time of one period
     float fTimePresent;
     int runTimes;
+    int legnumForSingleStep;
     Matrix<float, 4, 2> mfTimeForSwingPhase;  // startTime, endTime: LF, RF, LH, RH
     Matrix3f Ic[8]; // interia of Leg
     Matrix3f Ic_body;//interia of body
@@ -87,7 +93,7 @@ public:
     void UpdateLegStatus(int legNum);
     Matrix<float, 3, 1> FnnOutputcpt(VectorXd vec);
     Matrix<float, 4, 3> FnnStepModify();
-    void singleStepModify();
+    void singlegStepModify(uint8_t legNum);
     void AttitudeCorrection180();
     void AttitudeCorrection90();
     
