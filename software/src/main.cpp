@@ -11,9 +11,7 @@
 CRobotControl rbt(110.0,60.0,20.0,800.0,ADMITTANCE);
 DxlAPI motors("/dev/ttyAMA0", 3000000, rbt.ID, 2);
 // std::atomic<bool> runFlag(true); 
-bool runFlag = 0;
 bool curveFlag = 0;
-bool singleStepFlag = 0;
 int choosePosNum = 0;
 int LastJointPos = 0;
 std::mutex mtx_curveFlag;
@@ -52,10 +50,10 @@ void *udpConnect(void *data)
            if(ret) {Matrix<float, 6,1> TCV;
                 TCV<<3.0/1000,0,0,0,0,0;
                 rbt.SetCoMVel(TCV); 
-                runFlag=1;
+                rbt.runFlag=1;
                 goto END;}
         ret=commandJudge((char*)string("stop").c_str(),(char *)buf.c_str());
-        if(ret) {runFlag=0; goto END;}
+        if(ret) {rbt.runFlag=0; goto END;}
         ret=commandJudge((char*)string("ChangeStancePos").c_str(),(char *)buf.c_str());
         if(ret) {   
                     //erro: 不管这个command内容是什么，按下c，机器人会自动继续运行
@@ -82,25 +80,25 @@ void *udpConnect(void *data)
         if(ret) {Matrix<float, 6,1> TCV;
                 TCV<<0,3.0/1000,0,0,0,0;
                 rbt.SetCoMVel(TCV); 
-                runFlag=1;
+                rbt.runFlag=1;
                 goto END;}
         ret=commandJudge((char*)string("right").c_str(),(char *)buf.c_str());
         if(ret) {Matrix<float, 6,1> TCV;
                 TCV<<0,-3.0/1000,0,0,0,0;
                 rbt.SetCoMVel(TCV); 
-                runFlag=1;
+                rbt.runFlag=1;
                 goto END;}
         ret=commandJudge((char*)string("rotateleft").c_str(),(char *)buf.c_str());
         if(ret) {Matrix<float, 6,1> TCV;
                 TCV<<0,0,0,0,0,0.01;
                 rbt.SetCoMVel(TCV); 
-                runFlag=1;
+                rbt.runFlag=1;
                 goto END;}
         ret=commandJudge((char*)string("rotateright").c_str(),(char *)buf.c_str());
         if(ret) {Matrix<float, 6,1> TCV;
                 TCV<<0,0,0,0,0,-0.01;
                 rbt.SetCoMVel(TCV); 
-                runFlag=1;
+                rbt.runFlag=1;
                 goto END;}
         END:
 		buf.clear();
@@ -152,7 +150,7 @@ void *dataSave(void *data)
     WitWriteReg(XREFROLL, xx); //sReg[Roll]          //  归零失败
 	while(1)
 	{
-        if(runFlag)
+        if(rbt.runFlag)
         {
             gettimeofday(&startTime,NULL);
             //record data       Prevent simultaneous access to the same memory!
@@ -369,14 +367,15 @@ void *robotStateUpdateSend(void *data)
                 }  
             rbt.SetInitPos(InitPos);
         }
-        if(singleStepFlag){
-            // Delayms(1000);
+        cout<<"singleStepFlag:"<<rbt.singleStepFlag<<endl;
+        if(rbt.singleStepFlag){
+            rbt.singleStepFlag=0;
             int legNum = rbt.legnumForSingleStep;
-            // rbt.mfLegCmdPos(legNum,2)+=0.010;
             rbt.singlegStepModify(legNum);
         }
+        cout<<"runflag:"<<rbt.runFlag<<endl;
 
-        if(runFlag){
+        if(rbt.runFlag){
             struct timeval startTime={0,0},endTime={0,0};
             double timeUse=0.0;
             gettimeofday(&startTime,NULL);
@@ -517,14 +516,14 @@ void *SvUpdate(void *data)
         prepreValue=preValue;
         preValue=value;
 
-        if(runFlag == false){
+        if(rbt.runFlag == false){
             int count=0;
             for(auto a:rbt.m_glLeg){
                 if(a->getTouchStatus()==true)   count++;
             }
             if(count == 4){
                 //rbt.autoControlFlag=true;
-                runFlag=true;
+                rbt.runFlag=true;
                 for (size_t i = 0; i < 4; i++)
                 {
                     if(rbt.m_glLeg[i]->GetLegStatus()!=recover&&rbt.m_glLeg[i]->GetLegStatus()!=stance)

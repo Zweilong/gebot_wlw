@@ -19,6 +19,8 @@ public:
 public:
     float fTimeForSwing[4];
     bool bInitFlag;
+    bool singleStepFlag;
+    bool runFlag = 0;
     float fTimeForGaitPeriod;  // The time of the whole period
     float fTimePeriod;  // The time of one period
     float fTimePresent;

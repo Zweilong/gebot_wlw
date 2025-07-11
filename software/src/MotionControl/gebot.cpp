@@ -3,7 +3,6 @@ extern int LastJointPos;
 extern bool runFlag;
 extern bool opFlag;
 extern bool singleStepFlag;
-//extern bool runFlag = false;
 bool swingtimeFlag = false;
 void Delayms(unsigned short ms) {
     usleep(ms * 1000);  // usleep µ•Œª «Œ¢√Î
@@ -42,6 +41,8 @@ CGebot::CGebot(float length,float width,float height,float mass)
     mfSwingVelocity.setZero();
     targetCoMPosture.setZero();
     runTimes=0;
+    singleStepFlag = 0;
+    runFlag = 0;
     BSwingPhaseStartFlag = true;
     autoControlFlag=true;
     BSwingPhaseEndFlag = 0;     
@@ -555,6 +556,7 @@ void CGebot::MegaPumpPositive(int legNum)
 void CGebot::MegaPumpControl()
 {
     static int temppp[4] = {0};
+    static bool hasTriggered[4] = {false}; 
     for(int legNum=0;legNum<4;legNum++)   
     {
         if(m_glLeg[legNum]->GetLegStatus()==swingDown)  //attach
@@ -562,7 +564,7 @@ void CGebot::MegaPumpControl()
             int duration = iStatusCounterBuffer[legNum][int(swingDown)];
             int count = iStatusCounter[legNum];
             MegaPumpPositive(legNum);
-            if(count >= duration * 0.9)
+            if(count >= duration * 0.9&& !hasTriggered[legNum])
             {
                 if(legNum == 0) extraOffset[legNum] = 0.1; // LF
                 else if(legNum == 1) extraOffset[legNum] = -0.1; // RF
@@ -570,13 +572,38 @@ void CGebot::MegaPumpControl()
                 else if(legNum == 3) extraOffset[legNum] = -0.1; // RH
                 legnumForSingleStep = legNum;
                 singleStepFlag = 1;
-                // temppp[legNum]++;
-                // cout<<"temppp[0]= "<<temppp[0]<<endl;
-                // cout<<"temppp[1]= "<<temppp[1]<<endl;
-                // cout<<"temppp[2]= "<<temppp[2]<<endl;
-                // cout<<"temppp[3]= "<<temppp[3]<<endl;
-
+                hasTriggered[legNum] = true; 
+                
+                // int offsetcount = 10;
+                // for(int i=0;i<10;i++)
+                // {
+                //     if(legNum == 0 && offsetcount) 
+                //     {
+                //         offsetcount--;
+                //         extraOffset[legNum] += 0.01; // LF
+                //         Delayms(50); 
+                //     }
+                //     else if(legNum == 1) 
+                //     {
+                //         offsetcount--;
+                //         extraOffset[legNum] += -0.01; // RF
+                //         Delayms(50);            
+                //     }
+                //     else if(legNum == 2) 
+                //     {
+                //         offsetcount--;
+                //         extraOffset[legNum] += 0.01; // LH
+                //         Delayms(50);            
+                //     }
+                //     else if(legNum == 3) 
+                //     {
+                //         offsetcount--;
+                //         extraOffset[legNum] += -0.01; // RH
+                //         Delayms(50);            
+                //     }
+                // }
             }
+            else hasTriggered[legNum] = false;
         }
         else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
@@ -592,11 +619,6 @@ void CGebot::MegaPumpControl()
                 else if(legNum == 1) extraOffset[legNum] = 0.1; // RF
                 else if(legNum == 2) extraOffset[legNum] = -0.1; // LH
                 else if(legNum == 3) extraOffset[legNum] = 0.1; // RH
-                temppp[legNum]++;
-                cout<<"temppp[0]= "<<temppp[0]<<endl;
-                cout<<"temppp[1]= "<<temppp[1]<<endl;
-                cout<<"temppp[2]= "<<temppp[2]<<endl;
-                cout<<"temppp[3]= "<<temppp[3]<<endl;
         }        
     }
 
@@ -1085,20 +1107,20 @@ Matrix<float,4,3> CGebot::FnnStepModify()
 void CGebot::singlegStepModify(uint8_t legNum)
 {
  runFlag = 0;
- static int singleStepCount = 20;
- static int singleStepCount2 = 20;
- static int a =0;
+ int singleStepCount = 20;
+ int singleStepCount2 = 20;
+ int a =0;
  for(int i=0;i<40;i++) 
  {
+    a++;
     if(singleStepCount>0)
     {    opFlag = 1;
         singleStepCount--;
-        a++;
         mfLegCmdPos(legNum, 0) += 0;
         mfLegCmdPos(legNum, 1) += 0;
         mfLegCmdPos(legNum, 2) += 0.001;
         cout<<"test "<< a<<endl;
-        cout<<"mflegcmdpos:"<<mfLegCmdPos(legNum,2)<<endl;
+        // cout<<"mflegcmdpos:"<<mfLegCmdPos(legNum,2)<<endl;
         Delayms(100);
     }
     if(singleStepCount2>0 && singleStepCount<=0)
@@ -1109,11 +1131,6 @@ void CGebot::singlegStepModify(uint8_t legNum)
         mfLegCmdPos(legNum, 2) -= 0.001;
         Delayms(100);
     }
-    if(i=40)
-    {
-        opFlag = 0;
-    }
  }
-
-
+ runFlag = 1;
 }
